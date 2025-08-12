@@ -14,6 +14,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
         fields = ["id", "product", "product_id", "quantity", "price"]
+        extra_kwargs = {'id': {'read_only': True}}
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -23,6 +24,7 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ["id", "customer", "items", "total_amount", "created_at"]
+        extra_kwargs = {'id': {'read_only': True}}
 
     def create(self, validated_data):
         items_data = validated_data.pop("items")

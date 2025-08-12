@@ -6,7 +6,6 @@ from .models import Product
 from .serializers import ProductSerializer
 from drf_yasg.utils import swagger_auto_schema
 
-
 @swagger_auto_schema(
     method="get",
     responses={200: ProductSerializer(many=True)},

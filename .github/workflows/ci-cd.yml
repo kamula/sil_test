@@ -38,7 +38,7 @@ jobs:
       - name: Run tests
         env:
           DATABASE_URL: postgres://testuser:testpass@localhost:5432/testdb
-        run: pytest --cov=auth --cov=categories --cov=products --cov=orders --cov-report=xml
+        run: pytest --cov=customers --cov=categories --cov=products --cov=orders --cov-report=xml
       - name: Upload coverage
         uses: codecov/codecov-action@v3
 
