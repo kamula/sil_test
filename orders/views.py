@@ -6,7 +6,7 @@ from .models import Order
 from .serializers import OrderSerializer
 from products.models import Product
 from django.core.mail import send_mail
-from africastalking.AfricasTalkingGateway import AfricasTalkingGateway
+import africastalking 
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 import os
@@ -28,14 +28,17 @@ def order_create(request):
         
         order = serializer.save(customer=request.user.customer, total_amount=total)
         
-        # Send SMS to customer
-        gateway = AfricasTalkingGateway(
-            os.getenv('AFRICASTALKING_USERNAME'),
-            os.getenv('AFRICASTALKING_API_KEY')
+        # Initialize Africa's Talking SMS service
+        africastalking.initialize(
+            username=os.getenv('AFRICASTALKING_USERNAME'),
+            api_key=os.getenv('AFRICASTALKING_API_KEY')
         )
-        gateway.sendMessage(
-            request.user.customer.phone_number,
-            f"Your order #{order.id} has been placed successfully. Total: {order.total_amount}"
+        sms = africastalking.SMS
+        
+        # Send SMS to customer
+        sms.send(
+            message=f"Your order #{order.id} has been placed successfully. Total: {order.total_amount}",
+            recipients=[request.user.customer.phone_number]
         )
 
         # Send email to admin

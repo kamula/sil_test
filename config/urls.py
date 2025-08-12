@@ -12,7 +12,7 @@ schema_view = get_schema_view(
         contact=openapi.Contact(email="admin@groceries.com"),
     ),
     public=True,
-    permission_classes=(permissions.IsAuthenticated,),
+    permission_classes=(permissions.AllowAny,),
 )
 
 urlpatterns = [
