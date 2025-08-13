@@ -38,7 +38,7 @@ This backend powers a grocery ordering application with the following workflow:
 
 ## **System Sequence Diagram**
 
-![System Sequence Diagram](https://github.com/user-attachments/assets/98497669-56b5-4b57-97cc-2d6bb16a00ad)
+![Image](https://github.com/user-attachments/assets/3009d5ff-bac3-4627-88c1-4d71ee51da62)
 
 ---
 
