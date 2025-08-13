@@ -27,12 +27,15 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-
+    "mptt",
+    "drf_yasg",
+    "mozilla_django_oidc",
     "customers",
     "categories",
     "products",
     "orders",
 ]
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -119,3 +122,52 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# Authentication settings
+AUTHENTICATION_BACKENDS = [
+    "mozilla_django_oidc.auth.OIDCAuthenticationBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+OIDC_RP_CLIENT_ID = config("OIDC_CLIENT_ID")
+OIDC_RP_CLIENT_SECRET = config("OIDC_CLIENT_SECRET")
+OIDC_OP_AUTHORIZATION_ENDPOINT = config("OIDC_AUTH_ENDPOINT")
+OIDC_OP_TOKEN_ENDPOINT = config("OIDC_TOKEN_ENDPOINT")
+OIDC_OP_USER_ENDPOINT = config("OIDC_USER_ENDPOINT")
+OIDC_RP_SIGN_ALGO = "RS256"
+OIDC_OP_JWKS_ENDPOINT = config("OIDC_JWKS_ENDPOINT")
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "mozilla_django_oidc.contrib.drf.OIDCAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+}
+
+# Africa's Talking and Email settings
+AFRICASTALKING_USERNAME = config("AFRICASTALKING_USERNAME")
+AFRICASTALKING_API_KEY = config("AFRICASTALKING_API_KEY")
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = config("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+
+
+# drf-yasg settings
+SWAGGER_SETTINGS = {
+    "SECURITY_DEFINITIONS": {
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+        },
+    },
+}
