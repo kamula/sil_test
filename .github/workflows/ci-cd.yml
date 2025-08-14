@@ -55,7 +55,7 @@ jobs:
           AFRICASTALKING_API_KEY: ${{ secrets.AFRICASTALKING_API_KEY }}
           EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
           EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
-        run: pytest --cov=customers --cov=categories --cov=products --cov=orders --cov-report=xml
+        run: pytest
       - name: Upload coverage
         uses: codecov/codecov-action@v4
 
