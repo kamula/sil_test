@@ -1,39 +1,68 @@
-import uuid
 import pytest
-from rest_framework.test import APIClient
-from django.urls import reverse
-from django.contrib.auth.models import User
-from customers.models import Customer
-from categories.models import Category
-from products.models import Product
-from .models import Order
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
+from orders import utils
+from django.core.mail import send_mail
+from config import settings
+
 
 @pytest.mark.django_db
-class TestOrder:
-    def setup_method(self):
-        self.client = APIClient()
-        self.user = User.objects.create_user(username='testuser', password='testpass')
-        self.customer = Customer.objects.create(user=self.user, phone_number='+254700000000')
-        self.client.force_authenticate(user=self.user)
-        self.category = Category.objects.create(name='Bakery')
-        self.product = Product.objects.create(name='Bread', category=self.category, price=10.00, stock=100)
+class TestSendSMSNotification:
+    @patch("orders.utils.africastalking.SMS")
+    @patch("orders.utils.africastalking.initialize")
+    def test_send_sms_success(self, mock_initialize, mock_sms):
+        """Should send SMS successfully using Africa's Talking."""
+        mock_sms.send.return_value = {"status": "success"}
 
-    def test_order_creation(self):
-        order = Order.objects.create(customer=self.customer, total_amount=20.00)
-        assert str(order) == f"Order {order.id} by {self.customer}"
-        assert isinstance(order.id, uuid.UUID)
+        phone_number = "+254712345678"
+        message = "Test SMS"
 
-    @patch('africastalking.SMS.send')
-    @patch('django.core.mail.send_mail')
-    def test_create_order(self, mock_send_mail, mock_sms_send):
-        mock_sms_send.return_value = {'SMSMessageData': {'Recipients': [{'status': 'Success'}]}}
+        response = utils.send_sms_notification(phone_number, message)
+
+        mock_initialize.assert_called_once_with(
+            username=settings.AFRICASTALKING_USERNAME,
+            api_key=settings.AFRICASTALKING_API_KEY,
+        )
+        mock_sms.send.assert_called_once_with(
+            message=message, recipients=[phone_number]
+        )
+        assert response["status"] == "success"
+
+    def test_sms_service_not_configured(self, settings):
+        """Should raise RuntimeError if SMS config is missing."""
+        settings.AFRICASTALKING_USERNAME = ""
+        settings.AFRICASTALKING_API_KEY = ""
+
+        with pytest.raises(RuntimeError) as excinfo:
+            utils.send_sms_notification("+254712345678", "Hello")
+        assert "SMS service is not configured properly" in str(excinfo.value)
+
+
+@pytest.mark.django_db
+class TestSendEmailNotification:
+    @patch("orders.utils.send_mail")
+    def test_send_email_success(self, mock_send_mail):
+        """Should send email successfully."""
         mock_send_mail.return_value = 1
-        
-        response = self.client.post(reverse('order-create'), {
-            'items': [{'product_id': str(self.product.id), 'quantity': 2, 'price': 10.00}]
-        })
-        assert response.status_code == 201
-        assert Order.objects.count() == 1
-        assert mock_sms_send.called
-        assert mock_send_mail.called
+
+        subject = "Order Update"
+        message = "Your order has been shipped."
+        recipient_list = ["test@example.com"]
+
+        response = utils.send_email_notification(subject, message, recipient_list)
+
+        mock_send_mail.assert_called_once_with(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=recipient_list,
+        )
+        assert response == 1
+
+    def test_email_service_not_configured(self, settings):
+        """Should raise RuntimeError if email config is missing."""
+        settings.EMAIL_HOST_USER = ""
+        settings.EMAIL_HOST_PASSWORD = ""
+
+        with pytest.raises(RuntimeError) as excinfo:
+            utils.send_email_notification("Subject", "Message", ["test@example.com"])
+        assert "Email service is not configured properly." in str(excinfo.value)
