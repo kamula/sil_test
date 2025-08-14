@@ -78,7 +78,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/isaac_repo:latest
+          tags: ${{ secrets.DOCKER_USERNAME }}/groceries:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Debug Docker push
@@ -86,4 +86,4 @@ jobs:
           echo "Listing Docker images"
           docker images
           echo "Attempting manual push"
-          docker push ${{ secrets.DOCKER_USERNAME }}/isaac_repo:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/groceries:latest
