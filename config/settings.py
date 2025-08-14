@@ -1,24 +1,21 @@
+# config/settings.py
 from pathlib import Path
 from decouple import config
+import dj_database_url
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
-
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config("SECRET_KEY")
+SECRET_KEY = config("SECRET_KEY", default="django-insecure-default-key-for-testing")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config("DEBUG", cast=bool)
+DEBUG = config("DEBUG", default=True, cast=bool)
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1").split(",")
 
 # Application definition
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -36,9 +33,9 @@ INSTALLED_APPS = [
     "orders",
 ]
 
-
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -66,25 +63,30 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-
 # Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": config("DB_NAME"),
-        "USER": config("DB_USER"),
-        "PASSWORD": config("DB_PASSWORD"),
-        "HOST": config("DB_HOST", default="localhost"),
-        "PORT": config("DB_PORT", default="5432"),
+# Use DATABASE_URL if available (e.g., Neon in CI/production), else fall back to individual settings
+DATABASE_URL = config("DATABASE_URL", default=None)
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=not DEBUG  # Enable SSL for production (not DEBUG)
+        )
     }
-}
-
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": config("DB_NAME", default="groceries"),
+            "USER": config("DB_USER", default="postgres"),
+            "PASSWORD": config("DB_PASSWORD", default="pass@123"),
+            "HOST": config("DB_HOST", default="localhost"),
+            "PORT": config("DB_PORT", default="5432"),
+        }
+    }
 
 # Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -100,29 +102,19 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
 LANGUAGE_CODE = "en-us"
-
 TIME_ZONE = "UTC"
-
 USE_I18N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
-STATIC_URL = "static/"
+# Static files
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
 
 # Authentication settings
 AUTHENTICATION_BACKENDS = [
@@ -130,18 +122,17 @@ AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
 ]
 
-OIDC_RP_CLIENT_ID = config("OIDC_CLIENT_ID")
-OIDC_RP_CLIENT_SECRET = config("OIDC_CLIENT_SECRET")
-OIDC_OP_AUTHORIZATION_ENDPOINT = config("OIDC_AUTH_ENDPOINT")
-OIDC_OP_TOKEN_ENDPOINT = config("OIDC_TOKEN_ENDPOINT")
-OIDC_OP_USER_ENDPOINT = config("OIDC_USER_ENDPOINT")
+OIDC_RP_CLIENT_ID = config("OIDC_CLIENT_ID", default="")
+OIDC_RP_CLIENT_SECRET = config("OIDC_CLIENT_SECRET", default="")
+OIDC_OP_AUTHORIZATION_ENDPOINT = config("OIDC_AUTH_ENDPOINT", default="")
+OIDC_OP_TOKEN_ENDPOINT = config("OIDC_TOKEN_ENDPOINT", default="")
+OIDC_OP_USER_ENDPOINT = config("OIDC_USER_ENDPOINT", default="")
 OIDC_RP_SIGN_ALGO = "RS256"
 OIDC_STORE_ACCESS_TOKEN = True
-OIDC_OP_JWKS_ENDPOINT = config("OIDC_JWKS_ENDPOINT")
-OIDC_OP_LOGOUT_ENDPOINT = config("OIDC_OP_LOGOUT_ENDPOINT")
+OIDC_OP_JWKS_ENDPOINT = config("OIDC_JWKS_ENDPOINT", default="")
+OIDC_OP_LOGOUT_ENDPOINT = config("OIDC_OP_LOGOUT_ENDPOINT", default="")
 LOGIN_REDIRECT_URL = "/swagger/"
 LOGOUT_REDIRECT_URL = "/swagger/"
-
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -154,15 +145,32 @@ REST_FRAMEWORK = {
 }
 
 # Africa's Talking and Email settings
-AFRICASTALKING_USERNAME = config("AFRICASTALKING_USERNAME")
-AFRICASTALKING_API_KEY = config("AFRICASTALKING_API_KEY")
+AFRICASTALKING_USERNAME = config("AFRICASTALKING_USERNAME", default="")
+AFRICASTALKING_API_KEY = config("AFRICASTALKING_API_KEY", default="")
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.gmail.com"
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = config("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+EMAIL_HOST = config("EMAIL_HOST", default="smtp.gmail.com")
+EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
 
+# Logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
 
 # drf-yasg settings
 SWAGGER_SETTINGS = {
