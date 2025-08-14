@@ -26,39 +26,59 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.12'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Run tests
         env:
-          DATABASE_URL: postgres://testuser:testpass@localhost:5432/testdb
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DEBUG: ${{ secrets.DEBUG }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DB_NAME: testdb
+          DB_USER: testuser
+          DB_PASSWORD: testpass
+          DB_HOST: localhost
+          DB_PORT: 5432
+          OIDC_CLIENT_ID: ${{ secrets.OIDC_CLIENT_ID }}
+          OIDC_CLIENT_SECRET: ${{ secrets.OIDC_CLIENT_SECRET }}
+          OIDC_AUTH_ENDPOINT: ${{ secrets.OIDC_AUTH_ENDPOINT }}
+          OIDC_TOKEN_ENDPOINT: ${{ secrets.OIDC_TOKEN_ENDPOINT }}
+          OIDC_USER_ENDPOINT: ${{ secrets.OIDC_USER_ENDPOINT }}
+          OIDC_JWKS_ENDPOINT: ${{ secrets.OIDC_JWKS_ENDPOINT }}
+          OIDC_OP_LOGOUT_ENDPOINT: ${{ secrets.OIDC_OP_LOGOUT_ENDPOINT }}
+          AFRICASTALKING_USERNAME: ${{ secrets.AFRICASTALKING_USERNAME }}
+          AFRICASTALKING_API_KEY: ${{ secrets.AFRICASTALKING_API_KEY }}
+          EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
+          EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
         run: pytest --cov=customers --cov=categories --cov=products --cov=orders --cov-report=xml
       - name: Upload coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
 
-  deploy:
+  build-and-push:
     needs: test
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup Minikube
-        uses: medyagh/setup-minikube@latest
-
-      - name: Build Docker image
-        run: |
-          eval $(minikube docker-env)
-          docker build -t groceries:latest .
-
-      - name: Deploy to Minikube
-        run: |
-          kubectl apply -f kubernetes/secret.yaml
-          kubectl apply -f kubernetes/deployment.yaml
-          kubectl apply -f kubernetes/service.yaml
+      - uses: actions/checkout@v4
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/groceries:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
