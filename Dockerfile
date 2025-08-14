@@ -16,10 +16,14 @@ RUN apt-get update && apt-get install -y \
 
 # Install Python dependencies
 COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
+
+# Create non-root user
+RUN useradd -m -r appuser && chown -R appuser:appuser /app
+USER appuser
 
 # Copy project
-COPY . .
+COPY --chown=appuser:appuser . .
 
 # Collect static files
 RUN python manage.py collectstatic --noinput
