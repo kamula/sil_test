@@ -81,4 +81,9 @@ jobs:
           tags: ${{ secrets.DOCKER_USERNAME }}/groceries:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-     
+      - name: Debug Docker push
+        run: |
+          echo "Listing Docker images"
+          docker images
+          echo "Attempting manual push"
+          docker push ${{ secrets.DOCKER_USERNAME }}/groceries:latest
