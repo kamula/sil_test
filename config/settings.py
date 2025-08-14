@@ -126,7 +126,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Authentication settings
 AUTHENTICATION_BACKENDS = [
-    "mozilla_django_oidc.auth.OIDCAuthenticationBackend",
+    "customers.auth.CustomOIDCAuthenticationBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
 
@@ -136,6 +136,7 @@ OIDC_OP_AUTHORIZATION_ENDPOINT = config("OIDC_AUTH_ENDPOINT")
 OIDC_OP_TOKEN_ENDPOINT = config("OIDC_TOKEN_ENDPOINT")
 OIDC_OP_USER_ENDPOINT = config("OIDC_USER_ENDPOINT")
 OIDC_RP_SIGN_ALGO = "RS256"
+OIDC_STORE_ACCESS_TOKEN = True
 OIDC_OP_JWKS_ENDPOINT = config("OIDC_JWKS_ENDPOINT")
 OIDC_OP_LOGOUT_ENDPOINT = config("OIDC_OP_LOGOUT_ENDPOINT")
 LOGIN_REDIRECT_URL = "/swagger/"
@@ -165,6 +166,7 @@ EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
 
 # drf-yasg settings
 SWAGGER_SETTINGS = {
+    "USE_COMPAT_RENDERERS": False,
     "SECURITY_DEFINITIONS": {
         "Bearer": {
             "type": "apiKey",

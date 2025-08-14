@@ -1,3 +1,4 @@
+from customers.models import Customer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -40,8 +41,7 @@ def profile(request):
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_access_token(request):
-    print(request.session)
+def get_access_token(request):    
     access_token = request.session.get('oidc_access_token')
     if not access_token:
         return Response({"error": "No access token available"}, status=status.HTTP_400_BAD_REQUEST)
@@ -65,3 +65,49 @@ def get_access_token(request):
 def logout_view(request):
     logout(request) 
     return oidc_logout_redirect()
+
+
+
+@swagger_auto_schema(
+    method='put',
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'phone_number': openapi.Schema(type=openapi.TYPE_STRING, description='Phone number'),
+            'address': openapi.Schema(type=openapi.TYPE_STRING, description='Address'),
+        },
+        required=['phone_number']
+    ),
+    responses={
+        200: openapi.Response('Customer profile updated', schema=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'phone_number': openapi.Schema(type=openapi.TYPE_STRING),
+                'address': openapi.Schema(type=openapi.TYPE_STRING)
+            }
+        )),
+        400: 'Bad Request'
+    },
+    operation_summary="Update customer profile",
+    operation_description="Updates the phone number and address for the authenticated user's customer profile."
+)
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_customer_profile(request):
+    try:
+        customer = request.user.customer
+    except Customer.DoesNotExist:
+        customer = Customer.objects.create(
+            user=request.user,
+            phone_number=request.data.get('phone_number', '+254700000000'),
+            address=request.data.get('address', '')
+        )
+    
+    customer.phone_number = request.data.get('phone_number', customer.phone_number)
+    customer.address = request.data.get('address', customer.address)
+    customer.save()
+    
+    return Response({
+        'phone_number': customer.phone_number,
+        'address': customer.address
+    }, status=status.HTTP_200_OK)

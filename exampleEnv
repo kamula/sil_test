@@ -1,0 +1,27 @@
+# Django Settings
+SECRET_KEY="your_django_secret_key"
+DEBUG=True
+
+# Database Configuration
+DB_NAME=groceries
+DB_USER=postgres
+DB_PASSWORD=your_database_password
+DB_HOST=localhost
+DB_PORT=5432
+
+# OpenID Connect (OIDC) Configuration
+OIDC_CLIENT_ID="your_oidc_client_id"
+OIDC_CLIENT_SECRET="your_oidc_client_secret"
+OIDC_AUTH_ENDPOINT="https://your-auth-provider.com/authorize"
+OIDC_TOKEN_ENDPOINT="https://your-auth-provider.com/oauth/token"
+OIDC_USER_ENDPOINT="https://your-auth-provider.com/userinfo"
+OIDC_JWKS_ENDPOINT="https://your-auth-provider.com/.well-known/jwks.json"
+OIDC_OP_LOGOUT_ENDPOINT="https://your-auth-provider.com/v2/logout"
+
+# Africa's Talking Configuration
+AFRICASTALKING_USERNAME="your_africastalking_username"
+AFRICASTALKING_API_KEY="your_africastalking_api_key"
+
+# Email Configuration
+EMAIL_HOST_USER="your_email@example.com"
+EMAIL_HOST_PASSWORD="your_email_password_or_app_specific_password"

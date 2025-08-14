@@ -29,7 +29,7 @@ def redirect_to_swagger(request):
     return redirect("schema-swagger-ui")
 
 def redirect_to_oidc_logout(request):
-    return redirect('customer_logout')  # Redirect to RESTful logout endpoint
+    return redirect('customer_logout') 
 
 urlpatterns = [
     path("", redirect_to_swagger, name="home"),
